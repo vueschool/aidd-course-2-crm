@@ -12,6 +12,8 @@ export const organizations = sqliteTable('organizations', {
   state: text('state'),
   zip: text('zip'),
   country: text('country'),
+  plan: text('plan', { enum: ['Basic', 'Pro', 'Enterprise'] }).default('Basic').notNull(),
+  accountCreditsCents: integer('account_credits_cents').default(0).notNull(),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`).notNull(),
   updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`).notNull()
 })
@@ -67,6 +69,15 @@ export const opportunities = sqliteTable('opportunities', {
   updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`).notNull()
 })
 
+export const creditTransactions = sqliteTable('credit_transactions', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  organizationId: integer('organization_id').references(() => organizations.id, { onDelete: 'cascade' }).notNull(),
+  amountCents: integer('amount_cents').notNull(),
+  reason: text('reason').notNull(),
+  createdBy: integer('created_by').references(() => users.id),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`).notNull()
+})
+
 export type Organization = typeof organizations.$inferSelect
 export type NewOrganization = typeof organizations.$inferInsert
 export type User = typeof users.$inferSelect
@@ -77,3 +88,5 @@ export type Note = typeof notes.$inferSelect
 export type NewNote = typeof notes.$inferInsert
 export type Opportunity = typeof opportunities.$inferSelect
 export type NewOpportunity = typeof opportunities.$inferInsert
+export type CreditTransaction = typeof creditTransactions.$inferSelect
+export type NewCreditTransaction = typeof creditTransactions.$inferInsert
