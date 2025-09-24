@@ -1,5 +1,5 @@
 import { db } from '../database/db'
-import { organizations, contacts, notes, creditTransactions } from '../database/schema'
+import { organizations, customers, notes, purchases } from '../database/schema'
 import { eq, like, or, desc, and } from 'drizzle-orm'
 import { sql } from 'drizzle-orm'
 
@@ -10,26 +10,26 @@ const tools = {
 
     const results = await db
       .select({
-        id: organizations.id,
-        name: organizations.name,
-        plan: organizations.plan,
-        website: organizations.website,
-        industry: organizations.industry,
-        primaryContact: sql`(
-          SELECT json_object(
-            'firstName', c.first_name,
-            'lastName', c.last_name,
-            'email', c.email
-          )
-          FROM contacts c
-          WHERE c.organization_id = organizations.id
-          AND c.is_primary = 1
-          LIMIT 1
-        )`
+        id: customers.id,
+        firstName: customers.firstName,
+        lastName: customers.lastName,
+        email: customers.email,
+        phone: customers.phone,
+        position: customers.position,
+        department: customers.department,
+        credit: customers.credit,
+        organizationId: customers.organizationId,
+        organizationName: organizations.name,
+        organizationWebsite: organizations.website,
+        organizationIndustry: organizations.industry
       })
-      .from(organizations)
+      .from(customers)
+      .leftJoin(organizations, eq(customers.organizationId, organizations.id))
       .where(
         or(
+          sql`LOWER(${customers.firstName}) LIKE ${`%${searchStr}%`}`,
+          sql`LOWER(${customers.lastName}) LIKE ${`%${searchStr}%`}`,
+          sql`LOWER(${customers.email}) LIKE ${`%${searchStr}%`}`,
           sql`LOWER(${organizations.name}) LIKE ${`%${searchStr}%`}`,
           sql`LOWER(${organizations.website}) LIKE ${`%${searchStr}%`}`,
           sql`LOWER(${organizations.industry}) LIKE ${`%${searchStr}%`}`
@@ -39,10 +39,7 @@ const tools = {
 
     return {
       success: true,
-      data: results.map(r => ({
-        ...r,
-        primaryContact: r.primaryContact ? JSON.parse(r.primaryContact as string) : null
-      }))
+      data: results
     }
   },
 
@@ -54,20 +51,34 @@ const tools = {
     }
 
     const [customer] = await db
-      .select()
-      .from(organizations)
-      .where(eq(organizations.id, customerId))
+      .select({
+        id: customers.id,
+        firstName: customers.firstName,
+        lastName: customers.lastName,
+        email: customers.email,
+        phone: customers.phone,
+        mobile: customers.mobile,
+        position: customers.position,
+        department: customers.department,
+        credit: customers.credit,
+        organizationId: customers.organizationId,
+        organizationName: organizations.name,
+        organizationWebsite: organizations.website,
+        organizationIndustry: organizations.industry,
+        organizationAddress: organizations.address,
+        organizationCity: organizations.city,
+        organizationState: organizations.state,
+        organizationZip: organizations.zip,
+        organizationCountry: organizations.country
+      })
+      .from(customers)
+      .leftJoin(organizations, eq(customers.organizationId, organizations.id))
+      .where(eq(customers.id, customerId))
       .limit(1)
 
     if (!customer) {
       throw new Error('Customer not found')
     }
-
-    const customerContacts = await db
-      .select()
-      .from(contacts)
-      .where(eq(contacts.organizationId, customerId))
-      .orderBy(desc(contacts.isPrimary))
 
     const recentNotes = await db
       .select({
@@ -77,25 +88,24 @@ const tools = {
         createdAt: notes.createdAt
       })
       .from(notes)
-      .where(eq(notes.organizationId, customerId))
+      .where(eq(notes.customerId, customerId))
       .orderBy(desc(notes.createdAt))
       .limit(10)
 
-    const recentCredits = await db
+    const recentPurchases = await db
       .select()
-      .from(creditTransactions)
-      .where(eq(creditTransactions.organizationId, customerId))
-      .orderBy(desc(creditTransactions.createdAt))
+      .from(purchases)
+      .where(eq(purchases.customerId, customerId))
+      .orderBy(desc(purchases.purchaseDate))
       .limit(10)
 
     return {
       success: true,
       data: {
         ...customer,
-        contacts: customerContacts,
         recentNotes,
-        recentCredits,
-        totalCreditsCents: customer.accountCreditsCents
+        recentPurchases,
+        totalCredit: customer.credit
       }
     }
   },
@@ -112,21 +122,33 @@ const tools = {
       throw new Error('Invalid plan. Must be Basic, Pro, or Enterprise')
     }
 
+    // Get customer and their organization
+    const [customer] = await db
+      .select()
+      .from(customers)
+      .where(eq(customers.id, customerId))
+      .limit(1)
+
+    if (!customer || !customer.organizationId) {
+      throw new Error('Customer not found or not associated with an organization')
+    }
+
     const [updated] = await db
       .update(organizations)
       .set({
         plan: newPlan,
         updatedAt: sql`CURRENT_TIMESTAMP`
       })
-      .where(eq(organizations.id, customerId))
+      .where(eq(organizations.id, customer.organizationId))
       .returning()
 
     if (!updated) {
-      throw new Error('Customer not found')
+      throw new Error('Organization not found')
     }
 
     await db.insert(notes).values({
-      organizationId: customerId,
+      customerId: customerId,
+      organizationId: customer.organizationId,
       userId: 1,
       content: `Plan changed to ${newPlan}`,
       type: 'note'
@@ -135,9 +157,11 @@ const tools = {
     return {
       success: true,
       data: {
-        id: updated.id,
-        name: updated.name,
-        plan: updated.plan
+        customerId: customerId,
+        customerName: `${customer.firstName} ${customer.lastName}`,
+        organizationId: updated.id,
+        organizationName: updated.name,
+        newPlan: updated.plan
       }
     }
   },
@@ -153,47 +177,50 @@ const tools = {
 
     const [customer] = await db
       .select()
-      .from(organizations)
-      .where(eq(organizations.id, customerId))
+      .from(customers)
+      .where(eq(customers.id, customerId))
       .limit(1)
 
     if (!customer) {
       throw new Error('Customer not found')
     }
 
-    const newBalance = (customer.accountCreditsCents || 0) + amountCents
+    const amountDollars = amountCents / 100
+    const newBalance = (customer.credit || 0) + amountDollars
 
     const [updated] = await db
-      .update(organizations)
+      .update(customers)
       .set({
-        accountCreditsCents: newBalance,
+        credit: newBalance,
         updatedAt: sql`CURRENT_TIMESTAMP`
       })
-      .where(eq(organizations.id, customerId))
+      .where(eq(customers.id, customerId))
       .returning()
 
-    await db.insert(creditTransactions).values({
-      organizationId: customerId,
-      amountCents,
-      reason,
-      createdBy: 1
+    // Record this as a negative purchase (credit)
+    await db.insert(purchases).values({
+      customerId: customerId,
+      amount: -amountDollars, // Negative amount for credit
+      description: `Credit: ${reason}`,
+      purchaseDate: sql`CURRENT_TIMESTAMP`
     })
 
     await db.insert(notes).values({
-      organizationId: customerId,
+      customerId: customerId,
+      organizationId: customer.organizationId,
       userId: 1,
-      content: `Account credited: ${amountCents / 100} (${reason})`,
+      content: `Account credited: $${amountDollars} (${reason})`,
       type: 'note'
     })
 
     return {
       success: true,
       data: {
-        id: updated.id,
-        name: updated.name,
-        previousBalance: customer.accountCreditsCents,
-        newBalance: updated.accountCreditsCents,
-        creditApplied: amountCents
+        customerId: updated.id,
+        customerName: `${updated.firstName} ${updated.lastName}`,
+        previousBalance: customer.credit,
+        newBalance: updated.credit,
+        creditApplied: amountDollars
       }
     }
   },
@@ -207,34 +234,23 @@ const tools = {
 
     const [customer] = await db
       .select()
-      .from(organizations)
-      .where(eq(organizations.id, customerId))
+      .from(customers)
+      .where(eq(customers.id, customerId))
       .limit(1)
 
     if (!customer) {
       throw new Error('Customer not found')
     }
 
-    const [primaryContact] = await db
-      .select()
-      .from(contacts)
-      .where(
-        and(
-          eq(contacts.organizationId, customerId),
-          eq(contacts.isPrimary, true)
-        )
-      )
-      .limit(1)
-
-    if (!primaryContact || !primaryContact.email) {
-      throw new Error('No primary contact with email found for this customer')
+    if (!customer.email) {
+      throw new Error('Customer does not have an email address')
     }
 
     await db.insert(notes).values({
-      organizationId: customerId,
+      customerId: customerId,
+      organizationId: customer.organizationId,
       userId: 1,
-      contactId: primaryContact.id,
-      content: `Email sent to ${primaryContact.email}`,
+      content: `Email sent to ${customer.email}`,
       type: 'email'
     })
 
@@ -242,9 +258,8 @@ const tools = {
       success: true,
       data: {
         customerId,
-        customerName: customer.name,
-        recipientEmail: primaryContact.email,
-        recipientName: `${primaryContact.firstName} ${primaryContact.lastName}`,
+        customerName: `${customer.firstName} ${customer.lastName}`,
+        recipientEmail: customer.email,
         message: 'Email queued for sending'
       }
     }

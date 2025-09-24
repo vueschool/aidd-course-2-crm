@@ -54,6 +54,8 @@ CREATE TABLE `organizations` (
 	`state` text,
 	`zip` text,
 	`country` text,
+	`plan` text DEFAULT 'Basic' NOT NULL,
+	`account_credits_cents` integer DEFAULT 0 NOT NULL,
 	`created_at` text DEFAULT CURRENT_TIMESTAMP NOT NULL,
 	`updated_at` text DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
