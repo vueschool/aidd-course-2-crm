@@ -52,44 +52,42 @@
       </div>
 
       <div class="flex flex-between mb-3">
-        <h2>Contacts</h2>
+        <h2>Customers</h2>
         <NuxtLink
-          :to="`/admin/contacts/new?organizationId=${organization.id}`"
+          :to="`/admin/customers/new?organizationId=${organization.id}`"
           class="btn btn-primary"
         >
-          Add Contact
+          Add Customer
         </NuxtLink>
       </div>
 
       <div class="card">
         <div class="card-body">
-          <table class="table" v-if="contacts.length > 0">
+          <table class="table" v-if="customers.length > 0">
             <thead>
               <tr>
                 <th>Name</th>
                 <th>Position</th>
                 <th>Email</th>
                 <th>Phone</th>
-                <th>Primary</th>
+                <th>Credit</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="contact in contacts" :key="contact.id">
+              <tr v-for="customer in customers" :key="customer.id">
                 <td>
-                  <NuxtLink :to="`/admin/contacts/${contact.id}`">
-                    {{ contact.firstName }} {{ contact.lastName }}
+                  <NuxtLink :to="`/admin/customers/${customer.id}`">
+                    {{ customer.firstName }} {{ customer.lastName }}
                   </NuxtLink>
                 </td>
-                <td>{{ contact.position || '-' }}</td>
-                <td>{{ contact.email || '-' }}</td>
-                <td>{{ contact.phone || '-' }}</td>
-                <td>
-                  <span v-if="contact.isPrimary" class="badge badge-success">Primary</span>
-                </td>
+                <td>{{ customer.position || '-' }}</td>
+                <td>{{ customer.email || '-' }}</td>
+                <td>{{ customer.phone || '-' }}</td>
+                <td>${{ customer.credit?.toFixed(2) || '0.00' }}</td>
                 <td>
                   <NuxtLink
-                    :to="`/admin/contacts/${contact.id}/edit?return=/admin/organizations/${organization.id}`"
+                    :to="`/admin/customers/${customer.id}/edit?return=/admin/organizations/${organization.id}`"
                     class="btn btn-sm btn-secondary"
                   >
                     Edit
@@ -98,7 +96,7 @@
               </tr>
             </tbody>
           </table>
-          <p v-else class="text-secondary">No contacts yet.</p>
+          <p v-else class="text-secondary">No customers yet.</p>
         </div>
       </div>
     </div>
@@ -113,16 +111,16 @@ definePageMeta({
 
 const route = useRoute()
 const organization = ref(null)
-const contacts = ref([])
+const customers = ref([])
 
 onMounted(async () => {
-  const [orgData, contactsData] = await Promise.all([
+  const [orgData, customersData] = await Promise.all([
     $fetch(`/api/organizations/${route.params.id}`),
-    $fetch(`/api/contacts?organizationId=${route.params.id}`)
+    $fetch(`/api/customers?organizationId=${route.params.id}`)
   ])
 
   organization.value = orgData
-  contacts.value = contactsData.data
+  customers.value = customersData.data
 })
 
 const handleDelete = async () => {

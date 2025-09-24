@@ -1,5 +1,5 @@
 import { db } from '../../database/db'
-import { contacts } from '../../database/schema'
+import { customers } from '../../database/schema'
 import { eq } from 'drizzle-orm'
 import { getUserFromEvent } from '../../utils/auth'
 
@@ -18,24 +18,24 @@ export default defineEventHandler(async (event) => {
   if (!id) {
     throw createError({
       statusCode: 400,
-      statusMessage: 'Contact ID is required'
+      statusMessage: 'Customer ID is required'
     })
   }
 
   const body = await readBody(event)
 
-  const updatedContact = await db.update(contacts)
+  const updatedCustomer = await db.update(customers)
     .set({ ...body, updatedAt: new Date().toISOString() })
-    .where(eq(contacts.id, parseInt(id)))
+    .where(eq(customers.id, parseInt(id)))
     .returning()
     .get()
 
-  if (!updatedContact) {
+  if (!updatedCustomer) {
     throw createError({
       statusCode: 404,
-      statusMessage: 'Contact not found'
+      statusMessage: 'Customer not found'
     })
   }
 
-  return updatedContact
+  return updatedCustomer
 })

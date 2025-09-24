@@ -1,6 +1,6 @@
 <template>
   <AdminLayout>
-    <h1>Edit Contact</h1>
+    <h1>New Customer</h1>
 
     <div class="card">
       <div class="card-body">
@@ -27,14 +27,13 @@
               />
             </div>
             <div class="form-group">
-              <label class="form-label" for="organizationId">Organization *</label>
+              <label class="form-label" for="organizationId">Organization (Optional)</label>
               <select
                 id="organizationId"
                 v-model="form.organizationId"
                 class="form-select"
-                required
               >
-                <option value="">Select an organization</option>
+                <option value="">No organization</option>
                 <option
                   v-for="org in organizations"
                   :key="org.id"
@@ -43,6 +42,17 @@
                   {{ org.name }}
                 </option>
               </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="credit">Store Credit</label>
+              <input
+                id="credit"
+                v-model.number="form.credit"
+                type="number"
+                step="0.01"
+                min="0"
+                class="form-input"
+              />
             </div>
             <div class="form-group">
               <label class="form-label" for="position">Position</label>
@@ -89,16 +99,6 @@
                 class="form-input"
               />
             </div>
-            <div class="form-group">
-              <label class="form-label">
-                <input
-                  v-model="form.isPrimary"
-                  type="checkbox"
-                  class="form-checkbox"
-                />
-                Primary Contact
-              </label>
-            </div>
           </div>
 
           <div v-if="error" class="alert alert-danger">
@@ -108,9 +108,9 @@
           <div class="btn-group">
             <button type="submit" class="btn btn-primary" :disabled="loading">
               <span v-if="loading" class="loading"></span>
-              <span v-else>Update Contact</span>
+              <span v-else>Create Customer</span>
             </button>
-            <NuxtLink :to="`/admin/contacts/${route.params.id}`" class="btn btn-secondary">
+            <NuxtLink to="/admin/customers" class="btn btn-secondary">
               Cancel
             </NuxtLink>
           </div>
@@ -139,27 +139,16 @@ const form = ref({
   email: '',
   phone: '',
   mobile: '',
-  isPrimary: false
+  credit: 0
 })
 
 onMounted(async () => {
-  const [contactData, orgsData] = await Promise.all([
-    $fetch(`/api/contacts/${route.params.id}`),
-    $fetch('/api/organizations')
-  ])
+  const data = await $fetch('/api/organizations')
+  organizations.value = data.data
 
-  organizations.value = orgsData.data
-
-  form.value = {
-    firstName: contactData.firstName,
-    lastName: contactData.lastName,
-    organizationId: contactData.organizationId,
-    position: contactData.position || '',
-    department: contactData.department || '',
-    email: contactData.email || '',
-    phone: contactData.phone || '',
-    mobile: contactData.mobile || '',
-    isPrimary: contactData.isPrimary
+  // Check if organizationId was passed as query param
+  if (route.query.organizationId) {
+    form.value.organizationId = Number(route.query.organizationId)
   }
 })
 
@@ -168,20 +157,16 @@ const handleSubmit = async () => {
   error.value = ''
 
   try {
-    await $fetch(`/api/contacts/${route.params.id}`, {
-      method: 'PUT',
-      body: form.value
+    await $fetch('/api/customers', {
+      method: 'POST',
+      body: {
+        ...form.value,
+        organizationId: form.value.organizationId || null
+      }
     })
-
-    // Navigate back to the referring page if available, otherwise to the contact detail page
-    const returnUrl = route.query.return as string
-    if (returnUrl) {
-      await navigateTo(returnUrl)
-    } else {
-      await navigateTo(`/admin/contacts/${route.params.id}`)
-    }
+    await navigateTo('/admin/customers')
   } catch (e: any) {
-    error.value = e.data?.statusMessage || 'Failed to update contact'
+    error.value = e.data?.statusMessage || 'Failed to create customer'
   } finally {
     loading.value = false
   }

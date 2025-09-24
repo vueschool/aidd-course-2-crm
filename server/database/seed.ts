@@ -3,7 +3,7 @@ import { drizzle } from 'drizzle-orm/better-sqlite3'
 import bcrypt from 'bcrypt'
 import * as schema from './schema'
 
-const sqlite = new Database('./crm.db')
+const sqlite = new Database('./server/database/db.sqlite')
 const db = drizzle(sqlite, { schema })
 
 async function seed() {
@@ -11,9 +11,10 @@ async function seed() {
 
   try {
     // Clear existing data
+    await db.delete(schema.purchases)
     await db.delete(schema.notes)
     await db.delete(schema.opportunities)
-    await db.delete(schema.contacts)
+    await db.delete(schema.customers)
     await db.delete(schema.organizations)
     await db.delete(schema.users)
 
@@ -106,8 +107,8 @@ async function seed() {
       }
     ]).returning()
 
-    // Create contacts
-    const contacts = await db.insert(schema.contacts).values([
+    // Create customers (some with organizations, some without)
+    const customers = await db.insert(schema.customers).values([
       {
         organizationId: organizations[0].id,
         firstName: 'Michael',
@@ -117,7 +118,7 @@ async function seed() {
         mobile: '555-9101',
         position: 'CEO',
         department: 'Executive',
-        isPrimary: true
+        credit: 500.00
       },
       {
         organizationId: organizations[0].id,
@@ -128,7 +129,7 @@ async function seed() {
         mobile: '555-9102',
         position: 'CTO',
         department: 'Technology',
-        isPrimary: false
+        credit: 250.00
       },
       {
         organizationId: organizations[1].id,
@@ -139,7 +140,7 @@ async function seed() {
         mobile: '555-9201',
         position: 'Marketing Director',
         department: 'Marketing',
-        isPrimary: true
+        credit: 500.00
       },
       {
         organizationId: organizations[1].id,
@@ -150,7 +151,7 @@ async function seed() {
         mobile: '555-9202',
         position: 'Creative Director',
         department: 'Creative',
-        isPrimary: false
+        credit: 250.00
       },
       {
         organizationId: organizations[2].id,
@@ -161,7 +162,7 @@ async function seed() {
         mobile: '555-9301',
         position: 'Medical Director',
         department: 'Medical',
-        isPrimary: true
+        credit: 500.00
       },
       {
         organizationId: organizations[3].id,
@@ -172,7 +173,7 @@ async function seed() {
         mobile: '555-9401',
         position: 'Senior Advisor',
         department: 'Advisory',
-        isPrimary: true
+        credit: 500.00
       },
       {
         organizationId: organizations[4].id,
@@ -183,7 +184,30 @@ async function seed() {
         mobile: '555-9501',
         position: 'Principal',
         department: 'Administration',
-        isPrimary: true
+        credit: 500.00
+      },
+      // Individual customers without organization
+      {
+        organizationId: null,
+        firstName: 'Alice',
+        lastName: 'Anderson',
+        email: 'alice.anderson@gmail.com',
+        phone: '555-0601',
+        mobile: '555-9601',
+        position: null,
+        department: null,
+        credit: 1000.00
+      },
+      {
+        organizationId: null,
+        firstName: 'Bob',
+        lastName: 'Baker',
+        email: 'bob.baker@yahoo.com',
+        phone: '555-0602',
+        mobile: '555-9602',
+        position: null,
+        department: null,
+        credit: 750.00
       }
     ]).returning()
 
@@ -192,7 +216,7 @@ async function seed() {
       {
         userId: users[0].id,
         organizationId: organizations[0].id,
-        contactId: contacts[0].id,
+        customerId: customers[0].id,
         content: 'Initial meeting with CEO to discuss partnership opportunities.',
         type: 'meeting'
       },
@@ -205,7 +229,7 @@ async function seed() {
       {
         userId: users[1].id,
         organizationId: organizations[1].id,
-        contactId: contacts[2].id,
+        customerId: customers[2].id,
         content: 'Sent marketing campaign proposal via email.',
         type: 'email'
       },
@@ -218,7 +242,7 @@ async function seed() {
       {
         userId: users[0].id,
         organizationId: organizations[3].id,
-        contactId: contacts[5].id,
+        customerId: customers[5].id,
         content: 'Quarterly financial review meeting completed.',
         type: 'meeting'
       }
@@ -273,12 +297,89 @@ async function seed() {
       }
     ])
 
+    // Create purchases
+    await db.insert(schema.purchases).values([
+      {
+        customerId: customers[0].id,
+        amount: 1500.00,
+        description: 'Enterprise software license',
+        purchaseDate: new Date('2024-01-15').toISOString()
+      },
+      {
+        customerId: customers[1].id,
+        amount: 750.00,
+        description: 'Technical consultation services',
+        purchaseDate: new Date('2024-01-20').toISOString()
+      },
+      {
+        customerId: customers[2].id,
+        amount: 3200.00,
+        description: 'Marketing campaign package',
+        purchaseDate: new Date('2024-01-22').toISOString()
+      },
+      {
+        customerId: customers[7].id, // Alice (individual customer)
+        amount: 299.99,
+        description: 'Premium subscription - Annual',
+        purchaseDate: new Date('2024-01-25').toISOString()
+      },
+      {
+        customerId: customers[8].id, // Bob (individual customer)
+        amount: 149.50,
+        description: 'Professional consultation',
+        purchaseDate: new Date('2024-01-28').toISOString()
+      },
+      {
+        customerId: customers[0].id,
+        amount: 2100.00,
+        description: 'Additional user licenses',
+        purchaseDate: new Date('2024-02-01').toISOString()
+      },
+      {
+        customerId: customers[3].id,
+        amount: 850.00,
+        description: 'Training workshop',
+        purchaseDate: new Date('2024-02-05').toISOString()
+      },
+      {
+        customerId: customers[4].id,
+        amount: 5500.00,
+        description: 'Medical equipment',
+        purchaseDate: new Date('2024-02-08').toISOString()
+      },
+      {
+        customerId: customers[5].id,
+        amount: 1200.00,
+        description: 'Financial advisory services',
+        purchaseDate: new Date('2024-02-10').toISOString()
+      },
+      {
+        customerId: customers[6].id,
+        amount: 3800.00,
+        description: 'Educational software platform',
+        purchaseDate: new Date('2024-02-12').toISOString()
+      },
+      {
+        customerId: customers[7].id,
+        amount: 89.99,
+        description: 'Add-on features',
+        purchaseDate: new Date('2024-02-15').toISOString()
+      },
+      {
+        customerId: customers[2].id,
+        amount: 1750.00,
+        description: 'Social media management',
+        purchaseDate: new Date('2024-02-18').toISOString()
+      }
+    ])
+
     console.log('Database seeded successfully!')
     console.log(`Created ${users.length} users`)
     console.log(`Created ${organizations.length} organizations`)
-    console.log(`Created ${contacts.length} contacts`)
+    console.log(`Created ${customers.length} customers`)
     console.log(`Created 5 notes`)
     console.log(`Created 5 opportunities`)
+    console.log(`Created 12 purchases`)
 
   } catch (error) {
     console.error('Error seeding database:', error)

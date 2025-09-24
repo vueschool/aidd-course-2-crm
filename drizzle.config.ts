@@ -5,6 +5,6 @@ export default {
   out: './server/database/migrations',
   dialect: 'sqlite',
   dbCredentials: {
-    url: './crm.db'
+    url: './server/database/db.sqlite'
   }
 } satisfies Config

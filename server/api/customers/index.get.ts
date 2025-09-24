@@ -1,5 +1,5 @@
 import { db } from '../../database/db'
-import { contacts, organizations } from '../../database/schema'
+import { customers, organizations } from '../../database/schema'
 import { getUserFromEvent } from '../../utils/auth'
 import { eq } from 'drizzle-orm'
 
@@ -19,22 +19,22 @@ export default defineEventHandler(async (event) => {
   const organizationId = query.organizationId ? Number(query.organizationId) : null
 
   let queryBuilder = db.select({
-    contact: contacts,
+    customer: customers,
     organization: organizations
   })
-    .from(contacts)
-    .leftJoin(organizations, eq(contacts.organizationId, organizations.id))
+    .from(customers)
+    .leftJoin(organizations, eq(customers.organizationId, organizations.id))
     .limit(limit)
     .offset(offset)
 
   if (organizationId) {
-    queryBuilder = queryBuilder.where(eq(contacts.organizationId, organizationId))
+    queryBuilder = queryBuilder.where(eq(customers.organizationId, organizationId))
   }
 
   const results = await queryBuilder.all()
 
   return {
-    data: results.map(r => ({ ...r.contact, organization: r.organization })),
+    data: results.map(r => ({ ...r.customer, organization: r.organization })),
     limit,
     offset
   }

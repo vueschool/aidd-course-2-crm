@@ -92,6 +92,7 @@ a:hover {
 .btn-primary:hover {
   background: var(--primary-dark);
   border-color: var(--primary-dark);
+  color: white;
   text-decoration: none;
 }
 
@@ -103,6 +104,7 @@ a:hover {
 
 .btn-secondary:hover {
   background: var(--bg-secondary);
+  color: var(--text);
   text-decoration: none;
 }
 
@@ -115,6 +117,7 @@ a:hover {
 .btn-danger:hover {
   background: #dc2626;
   border-color: #dc2626;
+  color: white;
   text-decoration: none;
 }
 

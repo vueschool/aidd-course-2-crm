@@ -1,6 +1,6 @@
 <template>
   <AdminLayout>
-    <h1>New Contact</h1>
+    <h1>Edit Customer</h1>
 
     <div class="card">
       <div class="card-body">
@@ -27,14 +27,13 @@
               />
             </div>
             <div class="form-group">
-              <label class="form-label" for="organizationId">Organization *</label>
+              <label class="form-label" for="organizationId">Organization (Optional)</label>
               <select
                 id="organizationId"
                 v-model="form.organizationId"
                 class="form-select"
-                required
               >
-                <option value="">Select an organization</option>
+                <option value="">No organization</option>
                 <option
                   v-for="org in organizations"
                   :key="org.id"
@@ -43,6 +42,17 @@
                   {{ org.name }}
                 </option>
               </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="credit">Store Credit</label>
+              <input
+                id="credit"
+                v-model.number="form.credit"
+                type="number"
+                step="0.01"
+                min="0"
+                class="form-input"
+              />
             </div>
             <div class="form-group">
               <label class="form-label" for="position">Position</label>
@@ -96,7 +106,7 @@
                   type="checkbox"
                   class="form-checkbox"
                 />
-                Primary Contact
+                Primary Customer
               </label>
             </div>
           </div>
@@ -108,9 +118,9 @@
           <div class="btn-group">
             <button type="submit" class="btn btn-primary" :disabled="loading">
               <span v-if="loading" class="loading"></span>
-              <span v-else>Create Contact</span>
+              <span v-else>Update Customer</span>
             </button>
-            <NuxtLink to="/admin/contacts" class="btn btn-secondary">
+            <NuxtLink :to="`/admin/customers/${route.params.id}`" class="btn btn-secondary">
               Cancel
             </NuxtLink>
           </div>
@@ -139,16 +149,29 @@ const form = ref({
   email: '',
   phone: '',
   mobile: '',
-  isPrimary: false
+  isPrimary: false,
+  credit: 0
 })
 
 onMounted(async () => {
-  const data = await $fetch('/api/organizations')
-  organizations.value = data.data
+  const [customerData, orgsData] = await Promise.all([
+    $fetch(`/api/customers/${route.params.id}`),
+    $fetch('/api/organizations')
+  ])
 
-  // Check if organizationId was passed as query param
-  if (route.query.organizationId) {
-    form.value.organizationId = Number(route.query.organizationId)
+  organizations.value = orgsData.data
+
+  form.value = {
+    firstName: customerData.firstName,
+    lastName: customerData.lastName,
+    organizationId: customerData.organizationId,
+    position: customerData.position || '',
+    department: customerData.department || '',
+    email: customerData.email || '',
+    phone: customerData.phone || '',
+    mobile: customerData.mobile || '',
+    isPrimary: customerData.isPrimary,
+    credit: customerData.credit || 0
   }
 })
 
@@ -157,13 +180,20 @@ const handleSubmit = async () => {
   error.value = ''
 
   try {
-    await $fetch('/api/contacts', {
-      method: 'POST',
+    await $fetch(`/api/customers/${route.params.id}`, {
+      method: 'PUT',
       body: form.value
     })
-    await navigateTo('/admin/contacts')
+
+    // Navigate back to the referring page if available, otherwise to the contact detail page
+    const returnUrl = route.query.return as string
+    if (returnUrl) {
+      await navigateTo(returnUrl)
+    } else {
+      await navigateTo(`/admin/customers/${route.params.id}`)
+    }
   } catch (e: any) {
-    error.value = e.data?.statusMessage || 'Failed to create contact'
+    error.value = e.data?.statusMessage || 'Failed to update customer'
   } finally {
     loading.value = false
   }

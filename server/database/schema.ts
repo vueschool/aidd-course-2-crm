@@ -30,9 +30,9 @@ export const users = sqliteTable('users', {
   updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`).notNull()
 })
 
-export const contacts = sqliteTable('contacts', {
+export const customers = sqliteTable('customers', {
   id: integer('id').primaryKey({ autoIncrement: true }),
-  organizationId: integer('organization_id').references(() => organizations.id, { onDelete: 'cascade' }).notNull(),
+  organizationId: integer('organization_id').references(() => organizations.id, { onDelete: 'set null' }),
   firstName: text('first_name').notNull(),
   lastName: text('last_name').notNull(),
   email: text('email'),
@@ -40,7 +40,7 @@ export const contacts = sqliteTable('contacts', {
   mobile: text('mobile'),
   position: text('position'),
   department: text('department'),
-  isPrimary: integer('is_primary', { mode: 'boolean' }).default(false).notNull(),
+  credit: real('credit').default(0).notNull(),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`).notNull(),
   updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`).notNull()
 })
@@ -49,7 +49,7 @@ export const notes = sqliteTable('notes', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   userId: integer('user_id').references(() => users.id).notNull(),
   organizationId: integer('organization_id').references(() => organizations.id, { onDelete: 'cascade' }),
-  contactId: integer('contact_id').references(() => contacts.id, { onDelete: 'cascade' }),
+  customerId: integer('customer_id').references(() => customers.id, { onDelete: 'cascade' }),
   content: text('content').notNull(),
   type: text('type', { enum: ['call', 'email', 'meeting', 'note'] }).default('note').notNull(),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`).notNull(),
@@ -69,24 +69,25 @@ export const opportunities = sqliteTable('opportunities', {
   updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`).notNull()
 })
 
-export const creditTransactions = sqliteTable('credit_transactions', {
+
+export const purchases = sqliteTable('purchases', {
   id: integer('id').primaryKey({ autoIncrement: true }),
-  organizationId: integer('organization_id').references(() => organizations.id, { onDelete: 'cascade' }).notNull(),
-  amountCents: integer('amount_cents').notNull(),
-  reason: text('reason').notNull(),
-  createdBy: integer('created_by').references(() => users.id),
-  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`).notNull()
+  customerId: integer('customer_id').references(() => customers.id, { onDelete: 'cascade' }).notNull(),
+  amount: real('amount').notNull(),
+  description: text('description').notNull(),
+  purchaseDate: text('purchase_date').default(sql`CURRENT_TIMESTAMP`).notNull(),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`).notNull(),
+  updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`).notNull()
 })
 
 export type Organization = typeof organizations.$inferSelect
 export type NewOrganization = typeof organizations.$inferInsert
 export type User = typeof users.$inferSelect
 export type NewUser = typeof users.$inferInsert
-export type Contact = typeof contacts.$inferSelect
-export type NewContact = typeof contacts.$inferInsert
+export type Customer = typeof customers.$inferSelect
+export type NewCustomer = typeof customers.$inferInsert
 export type Note = typeof notes.$inferSelect
 export type NewNote = typeof notes.$inferInsert
 export type Opportunity = typeof opportunities.$inferSelect
-export type NewOpportunity = typeof opportunities.$inferInsert
-export type CreditTransaction = typeof creditTransactions.$inferSelect
-export type NewCreditTransaction = typeof creditTransactions.$inferInsert
+export type Purchase = typeof purchases.$inferSelect
+export type NewPurchase = typeof purchases.$inferInsert

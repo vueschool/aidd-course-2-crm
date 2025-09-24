@@ -1,9 +1,9 @@
 <template>
   <AdminLayout>
     <div class="flex flex-between mb-3">
-      <h1>Contacts</h1>
-      <NuxtLink to="/admin/contacts/new" class="btn btn-primary">
-        Add Contact
+      <h1>Customers</h1>
+      <NuxtLink to="/admin/customers/new" class="btn btn-primary">
+        Add Customer
       </NuxtLink>
     </div>
 
@@ -14,40 +14,41 @@
             <tr>
               <th>Name</th>
               <th>Organization</th>
-              <th>Position</th>
+              <th>Credit</th>
               <th>Email</th>
               <th>Phone</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="contact in contacts" :key="contact.id">
+            <tr v-for="customer in customers" :key="customer.id">
               <td>
-                <NuxtLink :to="`/admin/contacts/${contact.id}`">
-                  {{ contact.firstName }} {{ contact.lastName }}
+                <NuxtLink :to="`/admin/customers/${customer.id}`">
+                  {{ customer.firstName }} {{ customer.lastName }}
                 </NuxtLink>
               </td>
               <td>
                 <NuxtLink
-                  v-if="contact.organization"
-                  :to="`/admin/organizations/${contact.organization.id}`"
+                  v-if="customer.organization"
+                  :to="`/admin/organizations/${customer.organization.id}`"
                 >
-                  {{ contact.organization.name }}
+                  {{ customer.organization.name }}
                 </NuxtLink>
+                <span v-else>-</span>
               </td>
-              <td>{{ contact.position || '-' }}</td>
-              <td>{{ contact.email || '-' }}</td>
-              <td>{{ contact.phone || '-' }}</td>
+              <td>${{ customer.credit?.toFixed(2) || '0.00' }}</td>
+              <td>{{ customer.email || '-' }}</td>
+              <td>{{ customer.phone || '-' }}</td>
               <td>
                 <div class="btn-group">
                   <NuxtLink
-                    :to="`/admin/contacts/${contact.id}`"
+                    :to="`/admin/customers/${customer.id}`"
                     class="btn btn-sm btn-secondary"
                   >
                     View
                   </NuxtLink>
                   <NuxtLink
-                    :to="`/admin/contacts/${contact.id}/edit?return=/admin/contacts`"
+                    :to="`/admin/customers/${customer.id}/edit?return=/admin/customers`"
                     class="btn btn-sm btn-secondary"
                   >
                     Edit
@@ -67,10 +68,10 @@ definePageMeta({
   middleware: 'auth'
 })
 
-const contacts = ref([])
+const customers = ref([])
 
 onMounted(async () => {
-  const data = await $fetch('/api/contacts')
-  contacts.value = data.data
+  const data = await $fetch('/api/customers')
+  customers.value = data.data
 })
 </script>

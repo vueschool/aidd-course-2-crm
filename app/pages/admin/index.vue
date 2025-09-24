@@ -4,59 +4,53 @@
     <div class="grid grid-cols-4 mb-4">
       <div class="card">
         <div class="card-body">
-          <h3>{{ stats.organizations }}</h3>
-          <p class="text-secondary">Organizations</p>
+          <h3>{{ stats.customers }}</h3>
+          <p class="text-secondary">Total Customers</p>
         </div>
       </div>
       <div class="card">
         <div class="card-body">
-          <h3>{{ stats.contacts }}</h3>
-          <p class="text-secondary">Contacts</p>
+          <h3>{{ stats.sales }}</h3>
+          <p class="text-secondary">Total Sales</p>
         </div>
       </div>
       <div class="card">
         <div class="card-body">
-          <h3>{{ stats.opportunities }}</h3>
-          <p class="text-secondary">Opportunities</p>
+          <h3>${{ stats.revenue.toLocaleString() }}</h3>
+          <p class="text-secondary">Total Revenue</p>
         </div>
       </div>
       <div class="card">
         <div class="card-body">
-          <h3>${{ stats.totalValue.toLocaleString() }}</h3>
-          <p class="text-secondary">Pipeline Value</p>
+          <h3>${{ stats.avgSale.toFixed(2) }}</h3>
+          <p class="text-secondary">Average Sale</p>
         </div>
       </div>
     </div>
 
-    <h2>Recent Organizations</h2>
+    <h2>Recent Sales</h2>
     <div class="card">
       <div class="card-body">
         <table class="table">
           <thead>
             <tr>
-              <th>Name</th>
-              <th>Industry</th>
-              <th>City</th>
-              <th>Actions</th>
+              <th>Date</th>
+              <th>Customer</th>
+              <th>Description</th>
+              <th>Amount</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="org in recentOrgs" :key="org.id">
+            <tr v-for="purchase in recentSales" :key="purchase.id">
+              <td>{{ new Date(purchase.purchaseDate).toLocaleDateString() }}</td>
               <td>
-                <NuxtLink :to="`/admin/organizations/${org.id}`">
-                  {{ org.name }}
+                <NuxtLink v-if="purchase.customer" :to="`/admin/customers/${purchase.customer.id}`">
+                  {{ purchase.customer.firstName }} {{ purchase.customer.lastName }}
                 </NuxtLink>
+                <span v-else>-</span>
               </td>
-              <td>{{ org.industry || '-' }}</td>
-              <td>{{ org.city || '-' }}</td>
-              <td>
-                <NuxtLink
-                  :to="`/admin/organizations/${org.id}`"
-                  class="btn btn-sm btn-secondary"
-                >
-                  View
-                </NuxtLink>
-              </td>
+              <td>{{ purchase.description }}</td>
+              <td>${{ purchase.amount.toFixed(2) }}</td>
             </tr>
           </tbody>
         </table>
@@ -71,24 +65,27 @@ definePageMeta({
 })
 
 const stats = ref({
-  organizations: 0,
-  contacts: 0,
-  opportunities: 0,
-  totalValue: 0
+  customers: 0,
+  sales: 0,
+  revenue: 0,
+  avgSale: 0
 })
 
-const recentOrgs = ref([])
+const recentSales = ref([])
 
 onMounted(async () => {
-  const [orgsData, contactsData] = await Promise.all([
-    $fetch('/api/organizations?limit=5'),
-    $fetch('/api/contacts?limit=100')
+  const [customersData, purchasesData] = await Promise.all([
+    $fetch('/api/customers?limit=100'),
+    $fetch('/api/purchases?limit=10')
   ])
 
-  recentOrgs.value = orgsData.data
-  stats.value.organizations = orgsData.data.length
-  stats.value.contacts = contactsData.data.length
-  stats.value.opportunities = 5
-  stats.value.totalValue = 1075000
+  recentSales.value = purchasesData.data
+  stats.value.customers = customersData.data.length
+  stats.value.sales = purchasesData.data.length
+
+  // Calculate total revenue and average sale
+  const totalRevenue = purchasesData.data.reduce((sum, purchase) => sum + purchase.amount, 0)
+  stats.value.revenue = totalRevenue
+  stats.value.avgSale = purchasesData.data.length > 0 ? totalRevenue / purchasesData.data.length : 0
 })
 </script>

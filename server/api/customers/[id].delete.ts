@@ -1,5 +1,5 @@
 import { db } from '../../database/db'
-import { contacts } from '../../database/schema'
+import { customers } from '../../database/schema'
 import { eq } from 'drizzle-orm'
 import { getUserFromEvent } from '../../utils/auth'
 
@@ -18,21 +18,24 @@ export default defineEventHandler(async (event) => {
   if (!id) {
     throw createError({
       statusCode: 400,
-      statusMessage: 'Contact ID is required'
+      statusMessage: 'Customer ID is required'
     })
   }
 
-  const contact = await db.select()
-    .from(contacts)
-    .where(eq(contacts.id, parseInt(id)))
+  const deletedCustomer = await db.delete(customers)
+    .where(eq(customers.id, parseInt(id)))
+    .returning()
     .get()
 
-  if (!contact) {
+  if (!deletedCustomer) {
     throw createError({
       statusCode: 404,
-      statusMessage: 'Contact not found'
+      statusMessage: 'Customer not found'
     })
   }
 
-  return contact
+  return {
+    success: true,
+    message: 'Customer deleted successfully'
+  }
 })
