@@ -6,6 +6,7 @@ interface Tool {
   description: string
   inputSchema: z.ZodObject<any>
   handler: (params: any) => Promise<any>
+  readOnly?: boolean
 }
 
 export function registerTools(server: McpServer, tools: Tool[]) {
@@ -14,7 +15,12 @@ export function registerTools(server: McpServer, tools: Tool[]) {
       tool.name,
       {
         description: tool.description,
-        inputSchema: tool.inputSchema.shape
+        inputSchema: tool.inputSchema.shape,
+        ...(tool.readOnly && {
+          annotations: {
+            readOnlyHint: true
+          }
+        })
       },
       async (params: any) => {
         const result = await tool.handler(params)

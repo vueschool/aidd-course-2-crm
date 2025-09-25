@@ -52,5 +52,6 @@ export default {
   name: 'search_customers',
   description: 'Search for customers by name, website, or industry',
   inputSchema,
-  handler
+  handler,
+  readOnly: true
 }

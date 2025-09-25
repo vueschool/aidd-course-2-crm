@@ -80,5 +80,6 @@ export default {
   name: 'get_customer_profile',
   description: 'Get detailed customer information',
   inputSchema,
-  handler
+  handler,
+  readOnly: true
 }
