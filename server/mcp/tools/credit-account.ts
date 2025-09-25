@@ -4,40 +4,21 @@ import { customers, purchases, notes } from '../../database/schema'
 import { eq } from 'drizzle-orm'
 import { sql } from 'drizzle-orm'
 
-export const schema = z.object({
+export const name = 'credit_account'
+export const description = 'Add credits to customer account'
+
+export const inputSchema = z.object({
   id: z.string().describe('Customer ID'),
   amountCents: z.number().describe('Amount in cents'),
   reason: z.string().describe('Reason for credit')
 })
 
-export const definition = {
-  name: 'credit_account',
-  description: 'Add credits to customer account',
-  inputSchema: {
-    type: 'object' as const,
-    properties: {
-      id: {
-        type: 'string' as const,
-        description: 'Customer ID'
-      },
-      amountCents: {
-        type: 'number' as const,
-        description: 'Amount in cents'
-      },
-      reason: {
-        type: 'string' as const,
-        description: 'Reason for credit'
-      }
-    },
-    required: ['id', 'amountCents', 'reason']
-  }
-}
+export type Input = z.infer<typeof inputSchema>
 
-export async function handler(args: any) {
-  const params = schema.parse(args)
-  const customerId = parseInt(params.id)
-  const amountCents = params.amountCents
-  const reason = params.reason
+export async function handler(input: Input) {
+  const customerId = parseInt(input.id)
+  const amountCents = input.amountCents
+  const reason = input.reason
 
   if (!customerId) {
     throw new Error('Customer ID required')

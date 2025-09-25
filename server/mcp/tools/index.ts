@@ -11,9 +11,3 @@ export const tools = [
   creditAccount,
   sendEmailToCustomer
 ]
-
-export const toolDefinitions = tools.map(tool => tool.definition)
-
-export const toolHandlers = Object.fromEntries(
-  tools.map(tool => [tool.definition.name, tool.handler])
-)

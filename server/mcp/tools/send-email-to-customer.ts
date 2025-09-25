@@ -3,28 +3,17 @@ import { db } from '../../database/db'
 import { customers, notes } from '../../database/schema'
 import { eq } from 'drizzle-orm'
 
-export const schema = z.object({
+export const name = 'send_email_to_customer'
+export const description = 'Send email to customer primary contact'
+
+export const inputSchema = z.object({
   id: z.string().describe('Customer ID')
 })
 
-export const definition = {
-  name: 'send_email_to_customer',
-  description: 'Send email to customer primary contact',
-  inputSchema: {
-    type: 'object' as const,
-    properties: {
-      id: {
-        type: 'string' as const,
-        description: 'Customer ID'
-      }
-    },
-    required: ['id']
-  }
-}
+export type Input = z.infer<typeof inputSchema>
 
-export async function handler(args: any) {
-  const params = schema.parse(args)
-  const customerId = parseInt(params.id)
+export async function handler(input: Input) {
+  const customerId = parseInt(input.id)
 
   if (!customerId) {
     throw new Error('Customer ID required')

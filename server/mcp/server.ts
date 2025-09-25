@@ -1,106 +1,72 @@
 import express from 'express'
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
+import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js'
 import { fromNodeMiddleware } from '#imports'
-import { z } from 'zod'
-import { toolDefinitions, toolHandlers } from '../mcp/tools'
+import { tools } from './tools'
 
-// Express app for HTTP transport
 const app = express()
-app.use(express.json())
+app.use(express.json({ type: ['application/json', 'application/json+rpc'] }))
 
-// Handle MCP requests via HTTP
+// Handle all MCP requests (mounted at /mcp by Nuxt, so use / internally)
 app.post('/', async (req, res) => {
-  try {
-    const { method, params, id } = req.body
+  // Set CORS headers
+  res.setHeader('Access-Control-Allow-Origin', '*')
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
 
-    let result: any
-    switch (method) {
-      case 'initialize':
-        result = {
-          protocolVersion: '2025-06-18',
-          capabilities: {
-            tools: {}
-          },
-          serverInfo: {
-            name: 'aidd-crm-mcp',
-            version: '1.0.0'
-          }
+  // Create a new transport for each request (stateless)
+  const transport = new StreamableHTTPServerTransport({
+    // No session management - stateless server
+    sessionIdGenerator: undefined,
+    // DNS rebinding protection disabled for development
+    enableDnsRebindingProtection: false,
+  })
+
+  const server = new McpServer({
+    name: 'aidd-crm-mcp',
+    version: '1.0.0'
+  })
+
+  // Register each tool using registerTool which handles Zod schemas
+  for (const tool of tools) {
+    server.registerTool(
+      tool.name,
+      {
+        description: tool.description,
+        inputSchema: tool.inputSchema.shape
+      },
+      async (params: any) => {
+        // The SDK handles validation with Zod automatically
+        const result = await tool.handler(params)
+
+        return {
+          content: [
+            {
+              type: 'text' as const,
+              text: JSON.stringify(result, null, 2)
+            }
+          ]
         }
-        break
-
-      case 'tools/list':
-        result = { tools: toolDefinitions }
-        break
-
-      case 'tools/call':
-        const { name, arguments: args } = params
-        const handler = toolHandlers[name]
-
-        if (!handler) {
-          throw new Error(`Unknown tool: ${name}`)
-        }
-
-        try {
-          const response = await handler(args)
-          result = {
-            content: [
-              {
-                type: 'text',
-                text: JSON.stringify(response, null, 2)
-              }
-            ]
-          }
-        } catch (error: any) {
-          if (error instanceof z.ZodError) {
-            throw new Error(`Invalid arguments: ${error.message}`)
-          }
-          throw error
-        }
-        break
-
-      default:
-        return res.json({
-          jsonrpc: '2.0',
-          id,
-          error: {
-            code: -32601,
-            message: `Method not found: ${method}`
-          }
-        })
-    }
-
-    res.json({
-      jsonrpc: '2.0',
-      id,
-      result
-    })
-  } catch (error: any) {
-    res.json({
-      jsonrpc: '2.0',
-      id: req.body.id || null,
-      error: {
-        code: -32603,
-        message: error.message || 'Internal error'
       }
-    })
+    )
   }
+
+  // Connect to the MCP server
+  await server.connect(transport)
+
+  // Handle the request
+  await transport.handleRequest(req, res, req.body)
 })
 
-// SSE endpoint for MCP Inspector
-app.get('/', (req, res) => {
+// Handle GET requests (for SSE if needed)
+app.get('/', async (_req, res) => {
   res.setHeader('Content-Type', 'text/event-stream')
   res.setHeader('Cache-Control', 'no-cache')
   res.setHeader('Connection', 'keep-alive')
   res.setHeader('Access-Control-Allow-Origin', '*')
 
+  // For stateless server, we just keep the connection alive
   res.write('data: {"type":"connection","status":"ready"}\n\n')
-
-  const keepAlive = setInterval(() => {
-    res.write(':keepalive\n\n')
-  }, 30000)
-
-  req.on('close', () => {
-    clearInterval(keepAlive)
-  })
 })
 
 // CORS options

@@ -4,28 +4,17 @@ import { organizations, customers } from '../../database/schema'
 import { eq, or } from 'drizzle-orm'
 import { sql } from 'drizzle-orm'
 
-export const schema = z.object({
+export const name = 'search_customers'
+export const description = 'Search for customers by name, website, or industry'
+
+export const inputSchema = z.object({
   str: z.string().describe('Search string')
 })
 
-export const definition = {
-  name: 'search_customers',
-  description: 'Search for customers by name, website, or industry',
-  inputSchema: {
-    type: 'object' as const,
-    properties: {
-      str: {
-        type: 'string' as const,
-        description: 'Search string'
-      }
-    },
-    required: ['str']
-  }
-}
+export type Input = z.infer<typeof inputSchema>
 
-export async function handler(args: any) {
-  const params = schema.parse(args)
-  const searchStr = params.str.toLowerCase()
+export async function handler(input: Input) {
+  const searchStr = input.str.toLowerCase()
 
   const results = await db
     .select({

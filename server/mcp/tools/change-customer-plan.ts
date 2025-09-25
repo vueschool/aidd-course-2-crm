@@ -4,35 +4,19 @@ import { organizations, customers, notes } from '../../database/schema'
 import { eq } from 'drizzle-orm'
 import { sql } from 'drizzle-orm'
 
-export const schema = z.object({
+export const name = 'change_customer_plan'
+export const description = 'Change customer subscription plan'
+
+export const inputSchema = z.object({
   id: z.string().describe('Customer ID'),
   newPlan: z.enum(['Basic', 'Pro', 'Enterprise']).describe('New plan')
 })
 
-export const definition = {
-  name: 'change_customer_plan',
-  description: 'Change customer subscription plan',
-  inputSchema: {
-    type: 'object' as const,
-    properties: {
-      id: {
-        type: 'string' as const,
-        description: 'Customer ID'
-      },
-      newPlan: {
-        type: 'string' as const,
-        enum: ['Basic', 'Pro', 'Enterprise'],
-        description: 'New plan'
-      }
-    },
-    required: ['id', 'newPlan']
-  }
-}
+export type Input = z.infer<typeof inputSchema>
 
-export async function handler(args: any) {
-  const params = schema.parse(args)
-  const customerId = parseInt(params.id)
-  const newPlan = params.newPlan
+export async function handler(input: Input) {
+  const customerId = parseInt(input.id)
+  const newPlan = input.newPlan
 
   if (!customerId) {
     throw new Error('Customer ID required')
