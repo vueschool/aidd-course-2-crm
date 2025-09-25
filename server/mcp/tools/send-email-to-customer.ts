@@ -3,16 +3,13 @@ import { db } from '../../database/db'
 import { customers, notes } from '../../database/schema'
 import { eq } from 'drizzle-orm'
 
-export const name = 'send_email_to_customer'
-export const description = 'Send email to customer primary contact'
-
-export const inputSchema = z.object({
+const inputSchema = z.object({
   id: z.string().describe('Customer ID')
 })
 
-export type Input = z.infer<typeof inputSchema>
+type Input = z.infer<typeof inputSchema>
 
-export async function handler(input: Input) {
+async function handler(input: Input) {
   const customerId = parseInt(input.id)
 
   if (!customerId) {
@@ -50,4 +47,11 @@ export async function handler(input: Input) {
       message: 'Email queued for sending'
     }
   }
+}
+
+export default {
+  name: 'send_email_to_customer',
+  description: 'Send email to customer primary contact',
+  inputSchema,
+  handler
 }

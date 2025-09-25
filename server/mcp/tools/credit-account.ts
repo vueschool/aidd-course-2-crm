@@ -4,18 +4,15 @@ import { customers, purchases, notes } from '../../database/schema'
 import { eq } from 'drizzle-orm'
 import { sql } from 'drizzle-orm'
 
-export const name = 'credit_account'
-export const description = 'Add credits to customer account'
-
-export const inputSchema = z.object({
+const inputSchema = z.object({
   id: z.string().describe('Customer ID'),
   amountCents: z.number().describe('Amount in cents'),
   reason: z.string().describe('Reason for credit')
 })
 
-export type Input = z.infer<typeof inputSchema>
+type Input = z.infer<typeof inputSchema>
 
-export async function handler(input: Input) {
+async function handler(input: Input) {
   const customerId = parseInt(input.id)
   const amountCents = input.amountCents
   const reason = input.reason
@@ -72,4 +69,11 @@ export async function handler(input: Input) {
       creditApplied: amountDollars
     }
   }
+}
+
+export default {
+  name: 'credit_account',
+  description: 'Add credits to customer account',
+  inputSchema,
+  handler
 }

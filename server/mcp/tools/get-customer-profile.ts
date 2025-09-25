@@ -3,16 +3,13 @@ import { db } from '../../database/db'
 import { organizations, customers, notes, purchases } from '../../database/schema'
 import { eq, desc } from 'drizzle-orm'
 
-export const name = 'get_customer_profile'
-export const description = 'Get detailed customer information'
-
-export const inputSchema = z.object({
+const inputSchema = z.object({
   id: z.string().describe('Customer ID')
 })
 
-export type Input = z.infer<typeof inputSchema>
+type Input = z.infer<typeof inputSchema>
 
-export async function handler(input: Input) {
+async function handler(input: Input) {
   const customerId = parseInt(input.id)
 
   if (!customerId) {
@@ -77,4 +74,11 @@ export async function handler(input: Input) {
       totalCredit: customer.credit
     }
   }
+}
+
+export default {
+  name: 'get_customer_profile',
+  description: 'Get detailed customer information',
+  inputSchema,
+  handler
 }

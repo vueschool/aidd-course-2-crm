@@ -4,16 +4,13 @@ import { organizations, customers } from '../../database/schema'
 import { eq, or } from 'drizzle-orm'
 import { sql } from 'drizzle-orm'
 
-export const name = 'search_customers'
-export const description = 'Search for customers by name, website, or industry'
-
-export const inputSchema = z.object({
+const inputSchema = z.object({
   str: z.string().describe('Search string')
 })
 
-export type Input = z.infer<typeof inputSchema>
+type Input = z.infer<typeof inputSchema>
 
-export async function handler(input: Input) {
+async function handler(input: Input) {
   const searchStr = input.str.toLowerCase()
 
   const results = await db
@@ -49,4 +46,11 @@ export async function handler(input: Input) {
     success: true,
     data: results
   }
+}
+
+export default {
+  name: 'search_customers',
+  description: 'Search for customers by name, website, or industry',
+  inputSchema,
+  handler
 }

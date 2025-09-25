@@ -4,17 +4,14 @@ import { organizations, customers, notes } from '../../database/schema'
 import { eq } from 'drizzle-orm'
 import { sql } from 'drizzle-orm'
 
-export const name = 'change_customer_plan'
-export const description = 'Change customer subscription plan'
-
-export const inputSchema = z.object({
+const inputSchema = z.object({
   id: z.string().describe('Customer ID'),
   newPlan: z.enum(['Basic', 'Pro', 'Enterprise']).describe('New plan')
 })
 
-export type Input = z.infer<typeof inputSchema>
+type Input = z.infer<typeof inputSchema>
 
-export async function handler(input: Input) {
+async function handler(input: Input) {
   const customerId = parseInt(input.id)
   const newPlan = input.newPlan
 
@@ -63,4 +60,11 @@ export async function handler(input: Input) {
       newPlan: updated.plan
     }
   }
+}
+
+export default {
+  name: 'change_customer_plan',
+  description: 'Change customer subscription plan',
+  inputSchema,
+  handler
 }

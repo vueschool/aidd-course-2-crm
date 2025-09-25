@@ -3,6 +3,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js'
 import { fromNodeMiddleware } from '#imports'
 import { tools } from './tools'
+import { registerTools } from './registerTools'
 
 const app = express()
 app.use(express.json({ type: ['application/json', 'application/json+rpc'] }))
@@ -14,58 +15,34 @@ app.post('/', async (req, res) => {
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
 
-  // Create a new transport for each request (stateless)
+  // Create a stateless transport for each request
   const transport = new StreamableHTTPServerTransport({
-    // No session management - stateless server
-    sessionIdGenerator: undefined,
-    // DNS rebinding protection disabled for development
-    enableDnsRebindingProtection: false,
+    sessionIdGenerator: undefined, // No session management - stateless
+    enableDnsRebindingProtection: false, // Disabled for development
   })
 
+  // Create and configure MCP server
   const server = new McpServer({
     name: 'aidd-crm-mcp',
     version: '1.0.0'
   })
 
-  // Register each tool using registerTool which handles Zod schemas
-  for (const tool of tools) {
-    server.registerTool(
-      tool.name,
-      {
-        description: tool.description,
-        inputSchema: tool.inputSchema.shape
-      },
-      async (params: any) => {
-        // The SDK handles validation with Zod automatically
-        const result = await tool.handler(params)
+  // Register all tools
+  registerTools(server, tools)
 
-        return {
-          content: [
-            {
-              type: 'text' as const,
-              text: JSON.stringify(result, null, 2)
-            }
-          ]
-        }
-      }
-    )
-  }
-
-  // Connect to the MCP server
+  // Connect and handle the request
   await server.connect(transport)
-
-  // Handle the request
   await transport.handleRequest(req, res, req.body)
 })
 
-// Handle GET requests (for SSE if needed)
+// Handle GET requests for SSE (if needed)
 app.get('/', async (_req, res) => {
   res.setHeader('Content-Type', 'text/event-stream')
   res.setHeader('Cache-Control', 'no-cache')
   res.setHeader('Connection', 'keep-alive')
   res.setHeader('Access-Control-Allow-Origin', '*')
 
-  // For stateless server, we just keep the connection alive
+  // For stateless server, just keep connection alive
   res.write('data: {"type":"connection","status":"ready"}\n\n')
 })
 
