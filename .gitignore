@@ -30,3 +30,5 @@ logs
 
 # Test artifacts
 cookies.txt
+db.sqlite
+migrations/
