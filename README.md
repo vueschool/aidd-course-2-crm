@@ -1,75 +1,46 @@
-# Nuxt Minimal Starter
+# AIDD CRM
 
-Look at the [Nuxt documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
+A simple CRM system built with Nuxt 4 and SQLite, designed as the baseline for creating an MCP server in lesson 8.
+
+Learn more at [aidd.io](https://aidd.io)
+
+## Features
+
+- Customer and organization management
+- Purchase tracking
+- User authentication
+- Notes and activity logging
 
 ## Setup
 
-Make sure to install dependencies:
-
 ```bash
-# npm
-npm install
-
-# pnpm
+# Install dependencies
 pnpm install
 
-# yarn
-yarn install
+# Setup database
+pnpm db:push
+pnpm db:seed
 
-# bun
-bun install
-```
-
-## Development Server
-
-Start the development server on `http://localhost:3000`:
-
-```bash
-# npm
-npm run dev
-
-# pnpm
+# Start development server
 pnpm dev
-
-# yarn
-yarn dev
-
-# bun
-bun run dev
 ```
 
-## Production
+## Login
 
-Build the application for production:
+Default credentials: `admin@crm.com` / `password123`
+
+## Tech Stack
+
+- Nuxt 4 + Vue 3
+- SQLite + Drizzle ORM
+- JWT authentication
+
+## Scripts
 
 ```bash
-# npm
-npm run build
-
-# pnpm
-pnpm build
-
-# yarn
-yarn build
-
-# bun
-bun run build
+pnpm dev           # Development server
+pnpm build         # Build for production
+pnpm db:seed       # Seed database
+pnpm db:reset      # Reset database
+pnpm test          # Run tests
 ```
-
-Locally preview production build:
-
-```bash
-# npm
-npm run preview
-
-# pnpm
-pnpm preview
-
-# yarn
-yarn preview
-
-# bun
-bun run preview
-```
-
-Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
