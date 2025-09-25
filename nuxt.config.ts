@@ -4,5 +4,12 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   css: ['@/assets/css/main.css'],
   ssr: false,
-  modules: ['@nuxt/icon']
+  modules: ['@nuxt/icon'],
+  serverHandlers: [
+    {
+      route: '/mcp',
+      handler: '~~/server/mcp/server.ts',
+      middleware: true
+    }
+  ]
 })
