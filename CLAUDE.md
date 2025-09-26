@@ -42,3 +42,7 @@ The application includes an MCP server with the following structure:
   - `changeCustomerPlan` - Modify customer subscription plans
   - `creditAccount` - Add credits to customer accounts
   - `sendEmailToCustomer` - Send emails to customers
+  - `addNoteToCustomer` - Add notes to customer records with optional type classification (call, email, meeting, note)
+
+# Subagents
+- docs-updater: Anytime you are asked to make documentation changes, use the docs-updater subagent.
