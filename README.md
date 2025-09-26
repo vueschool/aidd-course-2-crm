@@ -35,6 +35,16 @@ Default credentials: `admin@crm.com` / `password123`
 - SQLite + Drizzle ORM
 - JWT authentication
 
+## MCP Tools
+
+This branch includes a Model Context Protocol (MCP) server with the following tools available:
+
+- **search-customers** - Search for customers by name, email, or organization
+- **get-customer-profile** - Get detailed information about a specific customer
+- **change-customer-plan** - Update a customer's subscription plan
+- **credit-account** - Add credits to a customer's account
+- **send-email-to-customer** - Send email notifications to customers
+
 ## Scripts
 
 ```bash
