@@ -31,3 +31,14 @@ This is a modern Nuxt 4 (NOT Nuxt 3!) CRM application with SQLite database backe
 - `pnpm db:push` - Push schema changes to database
 - `pnpm db:seed` - Seed database with sample data
 - `pnpm test` - Run tests
+
+## MCP (Model Context Protocol)
+The application includes an MCP server with the following structure:
+- **Server**: `server/mcp/server.ts` - Stateless Express middleware integrated with Nuxt
+- **Tool Registration**: `server/mcp/registerTools.ts` - Handles tool registration
+- **Tools Directory**: `server/mcp/tools/` containing:
+  - `searchCustomers` - Search for customers in the database
+  - `getCustomerProfile` - Get detailed customer information
+  - `changeCustomerPlan` - Modify customer subscription plans
+  - `creditAccount` - Add credits to customer accounts
+  - `sendEmailToCustomer` - Send emails to customers
